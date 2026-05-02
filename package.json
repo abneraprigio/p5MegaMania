@@ -1,0 +1,19 @@
+{
+  "name": "megamania-2.0",
+  "version": "2.0.0",
+  "description": "Atari-inspired Megamania Space Shooter completely written in Vanilla JS",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "game",
+    "megamania",
+    "atari",
+    "vanilla-js",
+    "html5"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {}
+}

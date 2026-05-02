@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Megamania 2.0 - Space Shooter arcade inspirado no clássico do Atari com boss battles e power-ups">
+  <title>MEGAMANIA 2.0 — Space Shooter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- ===== TITLE SCREEN ===== -->
+    <div id="screen-title" class="overlay active">
+      <div class="menu-panel">
+        <h1 class="title-main">MEGAMANIA</h1>
+        <span class="title-sub">2.0 — SPACE SHOOTER</span>
+        <div class="title-showcase">
+          <span>🍔</span><span>🍪</span><span>🪨</span><span>🎀</span><span>💎</span>
+        </div>
+        <div class="high-score-display">
+          BEST SCORE: <strong id="title-highscore">0</strong>
+        </div>
+        <div class="controls-info">
+          <div><kbd>←</kbd> <kbd>→</kbd> ou <kbd>A</kbd> <kbd>D</kbd> Mover</div>
+          <div><kbd>ESPAÇO</kbd> Atirar &nbsp;·&nbsp; <kbd>P</kbd> Pausar</div>
+        </div>
+        <button id="btn-start" class="btn-primary">INICIAR JOGO</button>
+        <span class="hint-text">ou pressione ENTER</span>
+      </div>
+    </div>
+
+    <!-- ===== PAUSE SCREEN ===== -->
+    <div id="screen-pause" class="overlay">
+      <div class="menu-panel compact">
+        <h2>PAUSADO</h2>
+        <p class="pause-info">Pressione <kbd>P</kbd> ou clique para continuar</p>
+        <button id="btn-resume" class="btn-primary">CONTINUAR</button>
+      </div>
+    </div>
+
+    <!-- ===== GAME OVER SCREEN ===== -->
+    <div id="screen-gameover" class="overlay">
+      <div class="menu-panel">
+        <h2 class="gameover-title">GAME OVER</h2>
+        <div class="final-score">
+          <span class="label">PONTUAÇÃO</span>
+          <strong id="final-score-value">0</strong>
+        </div>
+        <div id="new-record" class="new-record hidden">★ NOVO RECORDE! ★</div>
+        <div class="high-score-display">
+          BEST SCORE: <strong id="gameover-highscore">0</strong>
+        </div>
+        <button id="btn-restart" class="btn-primary">JOGAR NOVAMENTE</button>
+        <span class="hint-text">ou pressione ENTER</span>
+      </div>
+    </div>
+
+    <!-- ===== HUD (rendered over canvas) ===== -->
+    <div id="hud" class="hidden">
+      <div id="hud-left">
+        <span class="hud-label">SCORE</span>
+        <span id="hud-score" class="hud-value">0</span>
+      </div>
+      <div id="hud-center">
+        <span class="hud-label">WAVE</span>
+        <span id="hud-level" class="hud-value">1</span>
+      </div>
+      <div id="hud-right">
+        <span class="hud-label">LIVES</span>
+        <span id="hud-lives" class="hud-value">❤️❤️❤️</span>
+      </div>
+    </div>
+
+    <!-- ===== FUEL BAR ===== -->
+    <div id="fuel-bar-container" class="hidden">
+      <span class="fuel-label">FUEL</span>
+      <div id="fuel-bar-track">
+        <div id="fuel-bar-fill"></div>
+      </div>
+      <span id="fuel-pct" class="fuel-label">100%</span>
+    </div>
+
+    <!-- ===== BOSS HP BAR ===== -->
+    <div id="boss-hp-container" class="hidden">
+      <span class="boss-hp-label">⚠ BOSS</span>
+      <div id="boss-hp-track">
+        <div id="boss-hp-fill"></div>
+      </div>
+    </div>
+
+    <!-- ===== WAVE ANNOUNCE ===== -->
+    <div id="wave-announce" class="hidden">
+      <div class="wave-text" id="wave-text">WAVE 1</div>
+      <div class="wave-sub" id="wave-sub">🍔 ×24</div>
+    </div>
+
+    <!-- ===== ACTIVE POWERUP INDICATOR ===== -->
+    <div id="powerup-indicator" class="hidden">
+      <span id="powerup-icon">🛡️</span>
+      <div id="powerup-timer-track"><div id="powerup-timer-fill"></div></div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="entities.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
