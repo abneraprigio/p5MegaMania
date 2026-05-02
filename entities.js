@@ -52,11 +52,14 @@ class TrailParticle {
   }
   draw(ctx) {
     const t = this.life / this.max;
-    ctx.globalAlpha = t * 0.7;
-    ctx.fillStyle = t > 0.5 ? '#ffdd00' : '#ff6600';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r * t, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.globalAlpha = t * 0.8;
+    // Retro CRT amber/green engine glow
+    ctx.fillStyle = t > 0.5 ? '#ffb000' : '#00ff41';
+    ctx.shadowColor = t > 0.5 ? '#ffb000' : '#00ff41';
+    ctx.shadowBlur = 4;
+    const sz = Math.max(1, Math.floor(this.r * t));
+    ctx.fillRect(this.x - sz/2, this.y - sz/2, sz, sz);
+    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   }
 }
@@ -111,32 +114,63 @@ class Player {
   draw(ctx) {
     if (!this.visible) return;
     ctx.save();
-    ctx.translate(this.x, this.y);
-    // Body
-    ctx.fillStyle = '#00cfff';
-    ctx.beginPath();
-    ctx.moveTo(0, -18); ctx.lineTo(-11, 8); ctx.lineTo(11, 8);
-    ctx.closePath(); ctx.fill();
-    // Wings
-    ctx.fillStyle = '#0077cc';
-    ctx.beginPath(); ctx.moveTo(-11, 2); ctx.lineTo(-23, 15); ctx.lineTo(-9, 10); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(11, 2); ctx.lineTo(23, 15); ctx.lineTo(9, 10); ctx.closePath(); ctx.fill();
-    // Cockpit
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.ellipse(0, -6, 4, 6, 0, 0, Math.PI * 2); ctx.fill();
-    // Flame
-    const f = Math.random();
-    ctx.fillStyle = f > 0.5 ? '#ff8800' : '#ffdd00';
-    ctx.beginPath(); ctx.moveTo(-5, 10); ctx.lineTo(5, 10); ctx.lineTo(0, 20 + f * 6); ctx.closePath(); ctx.fill();
-    // Shield bubble
+    ctx.translate(Math.round(this.x), Math.round(this.y));
+
+    // === PIXEL ART SHIP (8x8 grid, pixel size = 4) ===
+    const P = 4; // pixel size
+    const C = '#00ffff'; // main body - CRT cyan
+    const W = '#ffffff'; // cockpit white
+    const D = '#0088aa'; // dark wing
+    const E = '#00ff41'; // engine green
+
+    // Pixel map: each [col, row] offset from center
+    // Row -5 (tip)
+    ctx.fillStyle = C;
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 6;
+    ctx.fillRect(-P/2, -5*P, P, P);         // tip
+    // Row -4
+    ctx.fillRect(-P/2, -4*P, P, P);
+    // Row -3
+    ctx.fillRect(-3*P/2, -3*P, 3*P, P);     // body wide
+    // Row -2
+    ctx.fillStyle = W;
+    ctx.fillRect(-P/2, -2*P, P, P);         // cockpit
+    ctx.fillStyle = C;
+    ctx.fillRect(-3*P/2, -2*P, P, P);
+    ctx.fillRect(P/2, -2*P, P, P);
+    // Row -1
+    ctx.fillRect(-5*P/2, -P, 5*P, P);       // widest body
+    // Row 0
+    ctx.fillStyle = D;
+    ctx.fillRect(-7*P/2, 0, 3*P, P);        // left wing
+    ctx.fillRect(P/2, 0, 3*P, P);           // right wing
+    ctx.fillStyle = C;
+    ctx.fillRect(-P/2, 0, P, P);            // center
+    // Row 1
+    ctx.fillStyle = D;
+    ctx.fillRect(-9*P/2, P, 2*P, P);        // left wing tip
+    ctx.fillRect(5*P/2, P, 2*P, P);         // right wing tip
+    ctx.fillStyle = C;
+    ctx.fillRect(-P/2, P, P, P);
+    // Engine flame (flicker)
+    ctx.shadowBlur = 0;
+    const flicker = Math.random() > 0.5;
+    ctx.fillStyle = flicker ? '#ffb000' : '#00ff41';
+    ctx.shadowColor = flicker ? '#ffb000' : '#00ff41';
+    ctx.shadowBlur = 8;
+    ctx.fillRect(-P/2, 2*P, P, P);
+    if (Math.random() > 0.4) ctx.fillRect(-P/2, 3*P, P, P);
+    ctx.shadowBlur = 0;
+
+    // Shield (retro box)
     if (this.shield && this.shieldHits > 0) {
-      ctx.strokeStyle = 'rgba(0,229,160,0.5)';
+      ctx.strokeStyle = '#00ff41';
+      ctx.shadowColor = '#00ff41';
+      ctx.shadowBlur = 10;
       ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 28, 24, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(0,229,160,0.08)';
-      ctx.fill();
+      ctx.strokeRect(-26, -22, 52, 48);
+      ctx.shadowBlur = 0;
     }
     ctx.restore();
   }
@@ -159,14 +193,21 @@ class Bullet {
   }
   draw(ctx) {
     if (this.isEnemy) {
-      ctx.fillStyle = '#ff4466';
-      ctx.shadowColor = '#ff2244';
+      // Boss bullet: magenta retro
+      ctx.fillStyle = '#ff00ff';
+      ctx.shadowColor = '#ff00ff';
+      ctx.shadowBlur = 10;
+      ctx.fillRect(this.x - 3, this.y - 3, 6, 6);
     } else {
-      ctx.fillStyle = '#ffff00';
-      ctx.shadowColor = '#ffff00';
+      // Player laser: bright green CRT
+      ctx.fillStyle = '#00ff41';
+      ctx.shadowColor = '#00ff41';
+      ctx.shadowBlur = 10;
+      // Chunky pixel laser
+      ctx.fillRect(this.x - 2, this.y - this.h / 2, 4, this.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(this.x - 1, this.y - this.h / 2, 2, 4);
     }
-    ctx.shadowBlur = 8;
-    ctx.fillRect(this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
     ctx.shadowBlur = 0;
   }
 }
@@ -186,10 +227,16 @@ class Enemy {
   }
   draw(ctx, emoji) {
     if (!this.alive) return;
-    ctx.font = '32px serif';
+    ctx.save();
+    ctx.font = '30px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    // Retro CRT phosphor tint
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 8;
     ctx.fillText(emoji, this.x, this.y);
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 }
 
@@ -234,15 +281,21 @@ class KamikazeEnemy {
   }
   draw(ctx) {
     if (!this.alive) return;
-    ctx.font = '30px serif';
+    ctx.save();
+    ctx.font = '28px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (this.state === 'dive') {
-      ctx.shadowColor = '#ff2200';
-      ctx.shadowBlur = 16;
+      ctx.shadowColor = '#ff00ff';
+      ctx.shadowBlur = 20;
+      ctx.globalAlpha = 0.85 + Math.random() * 0.15;
+    } else {
+      ctx.shadowColor = '#ffb000';
+      ctx.shadowBlur = 10;
     }
     ctx.fillText('☄️', this.x, this.y);
     ctx.shadowBlur = 0;
+    ctx.restore();
   }
 }
 
@@ -292,30 +345,36 @@ class Boss {
   draw(ctx) {
     if (!this.alive) return;
     ctx.save();
-    ctx.translate(this.x, this.y);
-    // UFO body
+    ctx.translate(Math.round(this.x), Math.round(this.y));
     const flash = this.flashTimer > 0;
-    ctx.fillStyle = flash ? '#fff' : '#aa22ff';
-    ctx.beginPath(); ctx.ellipse(0, 0, 45, 22, 0, 0, Math.PI * 2); ctx.fill();
-    // Dome
-    ctx.fillStyle = flash ? '#ffaaff' : '#dd66ff';
-    ctx.beginPath(); ctx.ellipse(0, -12, 22, 18, 0, Math.PI, 0); ctx.fill();
+    const P = 4;
+
+    // Retro pixel-block UFO in magenta
+    const BC = flash ? '#ffffff' : '#ff00ff'; // body color
+    const DC = flash ? '#ffaaff' : '#aa0088'; // dark
+    ctx.shadowColor = flash ? '#ffffff' : '#ff00ff';
+    ctx.shadowBlur = flash ? 20 : 14;
+
+    // Bottom dish
+    ctx.fillStyle = BC;
+    ctx.fillRect(-11*P, 0, 22*P, 2*P);
+    ctx.fillRect(-9*P, 2*P, 18*P, 2*P);
+    // Mid dome
+    ctx.fillStyle = DC;
+    ctx.fillRect(-7*P, -2*P, 14*P, 2*P);
+    ctx.fillRect(-5*P, -4*P, 10*P, 2*P);
+    ctx.fillStyle = BC;
+    ctx.fillRect(-3*P, -6*P, 6*P, 2*P);
     // Cockpit
-    ctx.fillStyle = '#ffee55';
-    ctx.beginPath(); ctx.ellipse(0, -18, 8, 8, 0, 0, Math.PI * 2); ctx.fill();
-    // Lights
-    ctx.fillStyle = '#ff4444';
-    for (let i = -2; i <= 2; i++) {
-      ctx.beginPath();
-      ctx.arc(i * 16, 6, 3, 0, Math.PI * 2);
-      ctx.fill();
+    ctx.fillStyle = flash ? '#ffff00' : '#ffb000';
+    ctx.fillRect(-P, -4*P, 2*P, 2*P);
+    // Lights on dish
+    const litColor = Math.floor(Date.now() / 150) % 2 === 0 ? '#ff0000' : '#ff00ff';
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = litColor;
+    for (let i = -4; i <= 4; i += 2) {
+      ctx.fillRect(i*P - P/2, P, P, P);
     }
-    // Glow
-    ctx.shadowColor = '#aa22ff';
-    ctx.shadowBlur = 30;
-    ctx.strokeStyle = 'rgba(170,34,255,0.3)';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.ellipse(0, 0, 47, 24, 0, 0, Math.PI * 2); ctx.stroke();
     ctx.shadowBlur = 0;
     ctx.restore();
   }
@@ -345,12 +404,17 @@ class PowerUp {
   draw(ctx) {
     if (!this.alive) return;
     const yOff = Math.sin(this.bob) * 4;
+    const blink = Math.floor(Date.now() / 200) % 2 === 0;
     ctx.save();
     ctx.translate(this.x, this.y + yOff);
-    // Glow
-    ctx.shadowColor = this.type === 'spread' ? '#ffaa00' : '#00e5a0';
-    ctx.shadowBlur = 14;
-    ctx.font = '22px serif';
+    // Retro blinking pixel border
+    const col = this.type === 'spread' ? '#ffb000' : '#00ff41';
+    ctx.shadowColor = col;
+    ctx.shadowBlur = blink ? 16 : 6;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-14, -14, 28, 28);
+    ctx.font = '18px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.type === 'spread' ? '🔥' : '🛡️', 0, 0);
@@ -372,10 +436,11 @@ class Star {
     if (this.y > GAME_H) { this.y = 0; this.x = Math.random() * GAME_W; }
   }
   draw(ctx) {
-    ctx.fillStyle = `rgba(255,255,255,${0.25 + this.r * 0.2})`;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fill();
+    // Stars in retro CRT tones: mostly dim green, some white, some cyan
+    const hue = this.r < 0.8 ? 'rgba(0,255,65,' : this.r < 1.3 ? 'rgba(255,255,255,' : 'rgba(0,220,255,';
+    ctx.fillStyle = hue + (0.15 + this.r * 0.18) + ')';
+    const sz = Math.max(1, Math.round(this.r));
+    ctx.fillRect(Math.round(this.x), Math.round(this.y), sz, sz);
   }
 }
 

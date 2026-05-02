@@ -51,12 +51,12 @@ class UIController {
   hide(id) { this.els[id]?.classList.remove('active'); this.els[id]?.classList.add('hidden'); }
   setScore(v) { this.els.score.textContent = v; }
   setLevel(v) { this.els.level.textContent = v; }
-  setLives(n) { this.els.lives.textContent = '❤️'.repeat(Math.max(0, n)); }
+  setLives(n) { this.els.lives.textContent = '♥'.repeat(Math.max(0, n)); }
   setFuel(pct) {
     this.els.fuelFill.style.width = pct + '%';
     this.els.fuelPct.textContent = Math.ceil(pct) + '%';
-    if (pct < 25) this.els.fuelFill.style.background = 'linear-gradient(90deg,#ff2200,#ff6600)';
-    else if (pct < 50) this.els.fuelFill.style.background = 'linear-gradient(90deg,#ffaa00,#ffdd00)';
+    if (pct < 25) this.els.fuelFill.style.background = '#ff2020';
+    else if (pct < 50) this.els.fuelFill.style.background = '#ffb000';
     else this.els.fuelFill.style.background = '';
   }
   setBossHp(pct) { this.els.bossHpFill.style.width = Math.max(0, pct) + '%'; }
@@ -239,7 +239,7 @@ class GameEngine {
     this.ui.setLives(this.lives);
     this.shakeTimer = 0.3;
     this.shakeIntensity = 8;
-    for (let i = 0; i < 18; i++) this.particles.push(new Particle(this.player.x, this.player.y, '#00cfff'));
+    for (let i = 0; i < 18; i++) this.particles.push(new Particle(this.player.x, this.player.y, '#00ffff'));
     if (this.lives <= 0) {
       this._gameOver();
     } else {
@@ -268,9 +268,16 @@ class GameEngine {
       c.translate((Math.random() - 0.5) * i, (Math.random() - 0.5) * i);
     }
 
-    // Clear
-    c.fillStyle = '#000';
+    // Clear — deep CRT black with faint green phosphor tint
+    c.fillStyle = '#00060000';
     c.fillRect(0, 0, GAME_W, GAME_H);
+    c.fillStyle = '#000000';
+    c.fillRect(0, 0, GAME_W, GAME_H);
+    // Subtle pixel grid
+    c.strokeStyle = 'rgba(0,255,65,0.03)';
+    c.lineWidth = 1;
+    for (let x = 0; x < GAME_W; x += 8) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, GAME_H); c.stroke(); }
+    for (let y = 0; y < GAME_H; y += 8) { c.beginPath(); c.moveTo(0, y); c.lineTo(GAME_W, y); c.stroke(); }
 
     // Stars always
     for (const s of this.stars) { s.update(dt); s.draw(c); }
@@ -402,7 +409,7 @@ class GameEngine {
           e.alive = false;
           this._addScore(10 * this.level);
           Audio.explosion();
-          for (let i = 0; i < 10; i++) this.particles.push(new Particle(e.x, e.y, '#ff8800'));
+          for (let i = 0; i < 10; i++) this.particles.push(new Particle(e.x, e.y, i % 2 === 0 ? '#ffb000' : '#ff00ff'));
           if (Math.random() < 0.1) this.powerups.push(new PowerUp(e.x, e.y));
           break;
         }
@@ -415,7 +422,7 @@ class GameEngine {
           k.alive = false;
           this._addScore(25 * this.level);
           Audio.explosion();
-          for (let i = 0; i < 12; i++) this.particles.push(new Particle(k.x, k.y, '#ff4400'));
+          for (let i = 0; i < 12; i++) this.particles.push(new Particle(k.x, k.y, i % 2 === 0 ? '#ff00ff' : '#ffb000'));
           if (Math.random() < 0.15) this.powerups.push(new PowerUp(k.x, k.y));
         }
       }
@@ -424,13 +431,13 @@ class GameEngine {
         if (aabb(b, this.boss, 8)) {
           b.dead = true;
           Audio.bossHit();
-          for (let i = 0; i < 4; i++) this.particles.push(new Particle(b.x, b.y, '#dd66ff'));
+          for (let i = 0; i < 4; i++) this.particles.push(new Particle(b.x, b.y, '#ff00ff'));
           if (this.boss.takeDamage(1)) {
             // Boss dead
             this._addScore(500 * this.level);
             Audio.bossDie();
-            for (let i = 0; i < 30; i++) this.particles.push(new Particle(this.boss.x, this.boss.y, '#aa22ff'));
-            for (let i = 0; i < 20; i++) this.particles.push(new Particle(this.boss.x, this.boss.y, '#ffee55'));
+            for (let i = 0; i < 30; i++) this.particles.push(new Particle(this.boss.x, this.boss.y, i % 3 === 0 ? '#ff00ff' : i % 3 === 1 ? '#ffb000' : '#00ffff'));
+            for (let i = 0; i < 20; i++) this.particles.push(new Particle(this.boss.x, this.boss.y, '#ffffff'));
             this.ui.hideBossHp();
             this.energy = 100;
             this.ui.setFuel(100);
@@ -455,7 +462,7 @@ class GameEngine {
         if (p.shield && p.shieldHits > 0) {
           p.shieldHits--;
           Audio.explosion();
-          for (let i = 0; i < 6; i++) this.particles.push(new Particle(p.x, p.y, '#00e5a0'));
+          for (let i = 0; i < 6; i++) this.particles.push(new Particle(p.x, p.y, '#00ff41'));
           if (p.shieldHits <= 0) { p.shield = false; p.powerTimer = 0; }
         } else {
           this._loseLife();
@@ -470,7 +477,7 @@ class GameEngine {
       if (!e.alive) continue;
       if (aabb(p, e, 10)) {
         e.alive = false;
-        for (let i = 0; i < 10; i++) this.particles.push(new Particle(e.x, e.y, '#ff8800'));
+        for (let i = 0; i < 10; i++) this.particles.push(new Particle(e.x, e.y, i % 2 === 0 ? '#ffb000' : '#00ffff'));
         if (p.shield && p.shieldHits > 0) {
           p.shieldHits--;
           Audio.explosion();
@@ -487,7 +494,7 @@ class GameEngine {
       if (!k.alive) continue;
       if (aabb(p, k, 8)) {
         k.alive = false;
-        for (let i = 0; i < 12; i++) this.particles.push(new Particle(k.x, k.y, '#ff4400'));
+        for (let i = 0; i < 12; i++) this.particles.push(new Particle(k.x, k.y, i % 2 === 0 ? '#ff00ff' : '#ffb000'));
         if (p.shield && p.shieldHits > 0) {
           p.shieldHits--;
           Audio.explosion();
@@ -527,7 +534,7 @@ class GameEngine {
           p.spreadShot = false;
         }
         p.powerTimer = 8;
-        for (let i = 0; i < 8; i++) this.particles.push(new Particle(pw.x, pw.y, '#00e5a0'));
+        for (let i = 0; i < 8; i++) this.particles.push(new Particle(pw.x, pw.y, i % 2 === 0 ? '#00ff41' : '#ffb000'));
       }
     }
     this.powerups = this.powerups.filter(pw => pw.alive);
