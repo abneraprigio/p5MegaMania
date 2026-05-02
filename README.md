@@ -1,5 +1,7 @@
 # Megamania 2.0 — Space Shooter
 
+🎮 **Jogue agora pelo navegador:** [https://p5-mega-mania.vercel.app/](https://p5-mega-mania.vercel.app/)
+
 Um clássico jogo arcade estilo Atari recriado do zero em **Vanilla JavaScript** (ES6+), HTML5 Canvas e Web Audio API. Inspirado no jogo Megamania do Atari 2600.
 
 ## 🚀 Funcionalidades
