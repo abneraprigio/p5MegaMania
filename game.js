@@ -196,10 +196,12 @@ class GameEngine {
     this.score = 0; this.level = 1; this.lives = 3; this.energy = 100;
     this.player    = new Player();
     this.bullets   = []; this.particles = []; this.enemies = [];
-    this.kamikazes = []; this.powerups  = [];
+    this.kamikazes = []; this.powerups  = []; this.gasDrops = [];
+    this.enemyProjectiles = [];
     this.boss = null; this.isBossWave = false;
     this.cooldown = 0; this.waveAnnounce = 0;
     this.enemyDir = 1; this.zigzagPhase = 0;
+    this.enemyShootTimer = 1.0;
   }
 
   _startGame() {
@@ -250,8 +252,7 @@ class GameEngine {
 
   _spawnWave(level) {
     const COLS = this._cols(), ROWS = 3;
-    const sc = GS();
-    const ew = 44 * sc, eh = 40 * sc;
+    const ew = GAME_W * 0.08, eh = GAME_W * 0.08;
     const marginX = GAME_W * 0.06;
     const startY  = GAME_H * 0.1;
     const spX = (GAME_W - marginX * 2) / Math.max(1, COLS - 1);
@@ -322,13 +323,13 @@ class GameEngine {
     if (shouldFire) {
       const px = this.player.x, py = this.player.y - this.player.h / 2;
       if (this.player.spreadShot) {
-        const sp = 60 * GSX();
-        this.bullets.push(new Bullet(px, py, -sp, -520 * GSY()));
-        this.bullets.push(new Bullet(px, py, 0, -520 * GSY()));
-        this.bullets.push(new Bullet(px, py,  sp, -520 * GSY()));
+        const sp = GAME_W * 0.15;
+        this.bullets.push(new Bullet(px, py, -sp, -GAME_H * 0.8));
+        this.bullets.push(new Bullet(px, py, 0, -GAME_H * 0.8));
+        this.bullets.push(new Bullet(px, py,  sp, -GAME_H * 0.8));
         Audio.spreadLaser();
       } else {
-        this.bullets.push(new Bullet(px, py, 0, -520 * GSY()));
+        this.bullets.push(new Bullet(px, py, 0, -GAME_H * 0.8));
         Audio.laser();
       }
       this.cooldown = 0.18;
@@ -336,9 +337,13 @@ class GameEngine {
 
     for (const b of this.bullets) b.update(dt);
     this.bullets = this.bullets.filter(b => !b.dead);
+    
+    for (const eb of this.enemyProjectiles) eb.update(dt);
+    this.enemyProjectiles = this.enemyProjectiles.filter(eb => !eb.dead);
 
     if (this.waveAnnounce <= 0) {
-      this.energy -= 2.5 * dt; this.ui.setFuel(Math.max(0, this.energy));
+      // 100% fuel takes ~66.6 seconds to reach 0%
+      this.energy -= 1.5 * dt; this.ui.setFuel(Math.max(0, this.energy));
       if (this.energy <= 0) { this.energy = 100; this._loseLife(); if (this.phase !== 'playing') return; }
 
       if (this.isBossWave) this._updateBoss(dt);
@@ -347,6 +352,8 @@ class GameEngine {
 
     for (const p of this.powerups) p.update(dt);
     this.powerups = this.powerups.filter(p => p.alive);
+    for (const g of this.gasDrops) g.update(dt);
+    this.gasDrops = this.gasDrops.filter(g => g.alive);
     this._checkCollisions();
     this.particles = this.particles.filter(p => p.update(dt));
   }
@@ -359,24 +366,24 @@ class GameEngine {
       this._startWave(this.level + 1); return;
     }
     this.zigzagPhase += dt;
-    const speed = (60 + (this.level - 1) * 25) * GSX(); // Increased speed scaling per level
+    const speed = GAME_W * (0.08 + (this.level - 1) * 0.03); 
     let minX = GAME_W, maxX = 0;
     for (const e of alive) { minX = Math.min(minX, e.x); maxX = Math.max(maxX, e.x); }
-    const margin = 30 * GS();
+    const margin = GAME_W * 0.04;
     if (maxX >= GAME_W - margin || minX <= margin) {
       this.enemyDir *= -1;
-      for (const e of alive) e.y += 16 * GS();
+      for (const e of alive) e.y += GAME_H * 0.03;
     }
     
-    // Enemy shooting mechanic starting at FASE 2
-    if (this.level >= 2) {
-      const shootChance = 0.05 * (1 + (this.level - 2) * 0.3) * dt; // Base 5% per sec, increases by 30% each phase
-      for (const e of alive) {
-        if (Math.random() < shootChance) {
-          const b = new Bullet(e.x, e.y + e.h / 2, 0, 250 * GSY());
-          b.isEnemy = true;
-          this.bullets.push(b);
-        }
+    // Explicit enemy shooting mechanic with enemyProjectiles array
+    if (this.level >= 2 && alive.length > 0) {
+      this.enemyShootTimer -= dt;
+      if (this.enemyShootTimer <= 0) {
+        this.enemyShootTimer = Math.max(0.3, 1.2 - (this.level * 0.1));
+        const shooter = alive[Math.floor(Math.random() * alive.length)];
+        const b = new Bullet(shooter.x, shooter.y + shooter.h / 2, 0, GAME_H * 0.4);
+        b.isEnemy = true;
+        this.enemyProjectiles.push(b);
       }
     }
 
@@ -389,28 +396,32 @@ class GameEngine {
 
   _checkCollisions() {
     const p = this.player;
+    const marginSm = GAME_W * 0.01;
+    const marginMd = GAME_W * 0.02;
+
     for (const b of this.bullets) {
-      if (b.isEnemy) continue;
       for (const e of this.enemies) {
         if (!e.alive) continue;
-        if (aabb(b, e, 6 * GS())) {
+        if (aabb(b, e, marginSm)) {
           b.dead = true; e.alive = false; this._addScore(10 * this.level);
           Audio.explosion();
           for (let i = 0; i < 10; i++) this.particles.push(new Particle(e.x, e.y, i%2===0?'#ffb000':'#ff00ff'));
-          if (Math.random() < 0.1) this.powerups.push(new PowerUp(e.x, e.y));
+          if (Math.random() < 0.15) this.gasDrops.push(new GasDrop(e.x, e.y)); // 15% chance to drop gas
+          else if (Math.random() < 0.05) this.powerups.push(new PowerUp(e.x, e.y));
           break;
         }
       }
       for (const k of this.kamikazes) {
         if (!k.alive) continue;
-        if (aabb(b, k, 6 * GS())) {
+        if (aabb(b, k, marginSm)) {
           b.dead = true; k.alive = false; this._addScore(25 * this.level);
           Audio.explosion();
           for (let i = 0; i < 12; i++) this.particles.push(new Particle(k.x, k.y, i%2===0?'#ff00ff':'#ffb000'));
-          if (Math.random() < 0.15) this.powerups.push(new PowerUp(k.x, k.y));
+          if (Math.random() < 0.15) this.gasDrops.push(new GasDrop(k.x, k.y)); // 15% chance to drop gas
+          else if (Math.random() < 0.05) this.powerups.push(new PowerUp(k.x, k.y));
         }
       }
-      if (this.boss?.alive && this.boss.entered && aabb(b, this.boss, 8 * GS())) {
+      if (this.boss?.alive && this.boss.entered && aabb(b, this.boss, marginMd)) {
         b.dead = true; Audio.bossHit();
         for (let i = 0; i < 4; i++) this.particles.push(new Particle(b.x, b.y, '#ff00ff'));
         if (this.boss.takeDamage(1)) {
@@ -424,19 +435,19 @@ class GameEngine {
     this.bullets = this.bullets.filter(b => !b.dead);
     if (p.invTimer > 0) return;
 
-    for (const b of this.bullets) {
-      if (!b.isEnemy) continue;
-      if (aabb(b, p, 8 * GS())) {
+    // Check collisions for enemyProjectiles
+    for (const b of this.enemyProjectiles) {
+      if (aabb(b, p, marginMd)) {
         b.dead = true;
         if (p.shield && p.shieldHits > 0) { p.shieldHits--; Audio.explosion(); for(let i=0;i<6;i++) this.particles.push(new Particle(p.x,p.y,'#00ff41')); if(!p.shieldHits){p.shield=false;p.powerTimer=0;} }
         else { this._loseLife(); if (this.phase !== 'playing') return; }
       }
     }
-    this.bullets = this.bullets.filter(b => !b.dead);
+    this.enemyProjectiles = this.enemyProjectiles.filter(b => !b.dead);
 
     const hitPlayer = (obj) => {
       if (!obj.alive) return;
-      if (!aabb(p, obj, 10 * GS())) return;
+      if (!aabb(p, obj, marginMd)) return;
       obj.alive = false;
       for (let i=0;i<10;i++) this.particles.push(new Particle(obj.x,obj.y,i%2===0?'#ffb000':'#00ffff'));
       if (p.shield && p.shieldHits > 0) { p.shieldHits--; Audio.explosion(); if(!p.shieldHits){p.shield=false;p.powerTimer=0;} }
@@ -445,7 +456,7 @@ class GameEngine {
     for (const e of this.enemies) { hitPlayer(e); if (this.phase !== 'playing') return; }
     for (const k of this.kamikazes) { hitPlayer(k); if (this.phase !== 'playing') return; }
 
-    if (this.boss?.alive && this.boss.entered && aabb(p, this.boss, 10 * GS())) {
+    if (this.boss?.alive && this.boss.entered && aabb(p, this.boss, marginMd)) {
       if (p.shield && p.shieldHits > 0) { p.shieldHits=0; p.shield=false; p.powerTimer=0; Audio.explosion(); }
       else { this._loseLife(); if (this.phase !== 'playing') return; }
     }
@@ -461,6 +472,17 @@ class GameEngine {
       }
     }
     this.powerups = this.powerups.filter(pw => pw.alive);
+
+    for (const g of this.gasDrops) {
+      if (!g.alive) continue;
+      if (aabb(p, g, 0)) {
+        g.alive = false; Audio.powerup();
+        this.energy = Math.min(100, this.energy + 30);
+        this.ui.setFuel(this.energy);
+        for(let i=0;i<6;i++) this.particles.push(new Particle(g.x,g.y,i%2===0?'#00ff41':'#0088ff'));
+      }
+    }
+    this.gasDrops = this.gasDrops.filter(g => g.alive);
   }
 
   _drawGame(c) {
@@ -471,7 +493,9 @@ class GameEngine {
     }
     if (this.boss?.alive) this.boss.draw(c);
     for (const b of this.bullets) b.draw(c);
+    for (const eb of this.enemyProjectiles) eb.draw(c);
     for (const pw of this.powerups) pw.draw(c);
+    for (const g of this.gasDrops) g.draw(c);
     this.player.draw(c);
     for (const p of this.particles) p.draw(c);
   }
