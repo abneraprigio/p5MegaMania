@@ -145,24 +145,33 @@ class GameEngine {
     this._resetGame();
     this._applyScale();
     window.addEventListener('resize', () => this._applyScale());
+    window.addEventListener('orientationchange', () => setTimeout(() => this._applyScale(), 150));
     requestAnimationFrame(t => this._loop(t));
   }
 
   _applyScale() {
+    // Available space (minus safe-area approximation for apps)
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const scaleX = vw / GAME_W;
-    const scaleY = vh / GAME_H;
-    const scale  = Math.min(scaleX, scaleY, 1); // never upscale beyond 1 on desktop
-    document.getElementById('game-wrapper').style.setProperty('--game-scale', scale);
-    // Also shift wrapper height to compensate for scale transform
-    if (scale < 1) {
-      const scaledH = GAME_H * scale;
-      document.getElementById('game-wrapper').style.marginBottom =
-        `-${(GAME_H - scaledH) / 2}px`;
+    const aspect = GAME_W / GAME_H; // 4:3
+
+    let w, h;
+    if (vw / vh > aspect) {
+      // Screen is wider than game: fit by height, letterbox sides
+      h = vh;
+      w = Math.round(vh * aspect);
     } else {
-      document.getElementById('game-wrapper').style.marginBottom = '';
+      // Screen is taller than game: fit by width, letterbox top/bottom
+      w = vw;
+      h = Math.round(vw / aspect);
     }
+
+    // Apply dimensions directly to the crt-frame
+    const frame = document.getElementById('crt-frame');
+    frame.style.setProperty('--game-w', w + 'px');
+    frame.style.setProperty('--game-h', h + 'px');
+    frame.style.width  = w + 'px';
+    frame.style.height = h + 'px';
   }
 
   _bindEvents() {

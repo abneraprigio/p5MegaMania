@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#000000"/>
+  <rect x="24" y="24" width="464" height="464" fill="none" stroke="#00ff41" stroke-width="8"/>
+  <text x="256" y="300" font-family="monospace" font-size="200" fill="#00ff41" text-anchor="middle">🚀</text>
+  <text x="256" y="390" font-family="monospace" font-size="48" fill="#00ff41" text-anchor="middle">MEGAMANIA</text>
+</svg>
