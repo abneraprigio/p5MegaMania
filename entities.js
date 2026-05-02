@@ -4,10 +4,12 @@
 
 var GAME_W = 800, GAME_H = 600;
 const ENEMY_EMOJIS = ['🍔','🍪','🪨','🎀','💎'];
-// Uniform scale vs design size 800x600
-function GS()  { return Math.min(GAME_W / 800, GAME_H / 600); }
-function GSX() { return GAME_W / 800; }
-function GSY() { return GAME_H / 600; }
+// Dynamic logical size for mobile (makes elements proportionally larger)
+function getBaseW() { return GAME_W < 600 ? 400 : 800; }
+function getBaseH() { return GAME_W < 600 ? 400 * (GAME_H / GAME_W) : 600; }
+function GS()  { return Math.min(GAME_W / getBaseW(), GAME_H / getBaseH()); }
+function GSX() { return GAME_W / getBaseW(); }
+function GSY() { return GAME_H / getBaseH(); }
 
 class Particle {
   constructor(x, y, color) {
@@ -119,7 +121,7 @@ class Bullet {
   }
   draw(ctx) {
     if (this.isEnemy) {
-      ctx.fillStyle = '#ff00ff'; ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 10;
+      ctx.fillStyle = '#ff2020'; ctx.shadowColor = '#ff2020'; ctx.shadowBlur = 10;
       const s = Math.max(4, 6 * GS()); ctx.fillRect(this.x - s/2, this.y - s/2, s, s);
     } else {
       ctx.fillStyle = '#00ff41'; ctx.shadowColor = '#00ff41'; ctx.shadowBlur = 10;

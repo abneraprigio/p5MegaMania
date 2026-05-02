@@ -113,7 +113,7 @@ class UIController {
   setHighScore(v) { if(this.els.titleHi) this.els.titleHi.textContent = v; if(this.els.goHi) this.els.goHi.textContent = v; }
   showWave(level, emoji, count) {
     if (!this.els.waveText) return;
-    this.els.waveText.textContent = level % 5 === 0 ? '⚠ BOSS FIGHT ⚠' : 'WAVE ' + level;
+    this.els.waveText.textContent = level % 5 === 0 ? '⚠ BOSS FIGHT ⚠' : 'FASE ' + level;
     this.els.waveSub.textContent  = level % 5 === 0 ? 'Prepare-se!'    : emoji + ' ×' + count;
     this.els.wave?.classList.remove('hidden');
   }
@@ -238,8 +238,7 @@ class GameEngine {
     this.ui.setLevel(level);
     this.ui.showWave(level, emoji, this._cols() * 3);
     this.waveAnnounce = 2;
-    if (this.isBossWave) { this.boss = new Boss(level); this.ui.showBossHp(); this.ui.setBossHp(100); }
-    else this._spawnWave(level);
+    this.waveSpawning = true;
   }
 
   _cols() {
@@ -303,7 +302,17 @@ class GameEngine {
 
   // ---------- Update ----------
   _update(dt) {
-    if (this.waveAnnounce > 0) { this.waveAnnounce -= dt; if (this.waveAnnounce <= 0) this.ui.hideWave(); }
+    if (this.waveAnnounce > 0) { 
+      this.waveAnnounce -= dt; 
+      if (this.waveAnnounce <= 0) { 
+        this.ui.hideWave(); 
+        if (this.waveSpawning) {
+          this.waveSpawning = false;
+          if (this.isBossWave) { this.boss = new Boss(this.level); this.ui.showBossHp(); this.ui.setBossHp(100); }
+          else this._spawnWave(this.level);
+        }
+      }
+    }
 
     this.player.update(dt, this.input.keys, this.input.touch, this.particles);
 
@@ -328,14 +337,13 @@ class GameEngine {
     for (const b of this.bullets) b.update(dt);
     this.bullets = this.bullets.filter(b => !b.dead);
 
-    this.energy -= 6 * dt; this.ui.setFuel(Math.max(0, this.energy));
-    if (this.energy <= 0) { this.energy = 100; this._loseLife(); if (this.phase !== 'playing') return; }
+    if (this.waveAnnounce <= 0) {
+      this.energy -= 2.5 * dt; this.ui.setFuel(Math.max(0, this.energy));
+      if (this.energy <= 0) { this.energy = 100; this._loseLife(); if (this.phase !== 'playing') return; }
 
-    if (this.player.powerTimer > 0) this.ui.showPowerup(this.player.spreadShot ? 'spread' : 'shield', this.player.powerTimer / 8);
-    else this.ui.hidePowerup();
-
-    if (this.isBossWave) this._updateBoss(dt);
-    else this._updateEnemies(dt);
+      if (this.isBossWave) this._updateBoss(dt);
+      else this._updateEnemies(dt);
+    }
 
     for (const p of this.powerups) p.update(dt);
     this.powerups = this.powerups.filter(p => p.alive);
@@ -351,7 +359,7 @@ class GameEngine {
       this._startWave(this.level + 1); return;
     }
     this.zigzagPhase += dt;
-    const speed = (60 + (this.level - 1) * 18) * GSX();
+    const speed = (60 + (this.level - 1) * 25) * GSX(); // Increased speed scaling per level
     let minX = GAME_W, maxX = 0;
     for (const e of alive) { minX = Math.min(minX, e.x); maxX = Math.max(maxX, e.x); }
     const margin = 30 * GS();
@@ -359,6 +367,19 @@ class GameEngine {
       this.enemyDir *= -1;
       for (const e of alive) e.y += 16 * GS();
     }
+    
+    // Enemy shooting mechanic starting at FASE 2
+    if (this.level >= 2) {
+      const shootChance = 0.05 * (1 + (this.level - 2) * 0.3) * dt; // Base 5% per sec, increases by 30% each phase
+      for (const e of alive) {
+        if (Math.random() < shootChance) {
+          const b = new Bullet(e.x, e.y + e.h / 2, 0, 250 * GSY());
+          b.isEnemy = true;
+          this.bullets.push(b);
+        }
+      }
+    }
+
     for (const e of alive) e.update(dt, this.zigzagPhase, this.enemyDir, speed);
     for (const k of aliveK) k.update(dt, this.player.x);
     this.kamikazes = this.kamikazes.filter(k => k.alive);
