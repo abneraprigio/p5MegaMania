@@ -2,174 +2,136 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <!-- Full app viewport: no zoom, no bounce -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="description" content="Megamania 2.0 - Space Shooter arcade inspirado no clássico do Atari">
-
-  <!-- PWA / App meta -->
+  <meta name="description" content="Megamania 2.0 - Space Shooter arcade para mobile">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Megamania">
   <meta name="theme-color" content="#000000">
-  <meta name="msapplication-TileColor" content="#000000">
-  <meta name="msapplication-navbutton-color" content="#00ff41">
-
   <title>MEGAMANIA 2.0</title>
-
-  <!-- Manifest -->
   <link rel="manifest" href="manifest.json">
-
-  <!-- Icons -->
   <link rel="icon" href="icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon-192.svg">
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Root container: fills 100vh/vw -->
-  <div id="app-root">
 
-    <!-- CRT frame -->
-    <div id="crt-frame">
-      <canvas id="gameCanvas"></canvas>
+  <!-- Canvas: fills 100% screen -->
+  <canvas id="gameCanvas"></canvas>
 
-      <!-- CRT scanlines overlay -->
-      <div id="crt-overlay" aria-hidden="true"></div>
-      <!-- CRT vignette -->
-      <div id="crt-vignette" aria-hidden="true"></div>
-
-      <!-- ===== TITLE SCREEN ===== -->
-      <div id="screen-title" class="overlay active" role="dialog" aria-label="Tela inicial">
-        <div class="menu-panel">
-          <div class="retro-border">
-            <h1 class="title-main">MEGAMANIA</h1>
-            <span class="title-sub">★ VERSION 2.0 ★</span>
-            <div class="title-showcase" aria-hidden="true">
-              <span>🍔</span><span>🍪</span><span>🪨</span><span>🎀</span><span>💎</span>
-            </div>
-            <div class="high-score-display">
-              HI-SCORE &nbsp;<strong id="title-highscore">000000</strong>
-            </div>
-            <div class="controls-info">
-              <div>[←][→] / [A][D] — MOVER</div>
-              <div>[SPACE] ATIRAR &nbsp; [P] PAUSA</div>
-            </div>
-            <button id="btn-start" class="btn-primary">▶ INSERT COIN ◀</button>
-            <span class="hint-text">- PRESS ENTER TO START -</span>
-          </div>
+  <!-- ===== TITLE SCREEN ===== -->
+  <div id="screen-title" class="overlay active">
+    <div class="menu-panel">
+      <div class="retro-border">
+        <h1 class="title-main">MEGAMANIA</h1>
+        <span class="title-sub">★ VERSION 2.0 ★</span>
+        <div class="title-showcase">🍔🍪🪨🎀💎</div>
+        <div class="high-score-display">HI-SCORE &nbsp;<strong id="title-highscore">0</strong></div>
+        <div class="controls-info">
+          <div>← → / A D — MOVER</div>
+          <div>[SPACE] ATIRAR &nbsp; [P] PAUSA</div>
+          <div class="touch-hint">📱 TOQUE E ARRASTE PARA JOGAR</div>
         </div>
+        <button id="btn-start" class="btn-primary">▶ INSERT COIN ◀</button>
+        <span class="hint-text">- PRESS ENTER TO START -</span>
       </div>
+    </div>
+  </div>
 
-      <!-- ===== PAUSE SCREEN ===== -->
-      <div id="screen-pause" class="overlay" role="dialog" aria-label="Jogo pausado">
-        <div class="menu-panel compact">
-          <div class="retro-border">
-            <h2>** PAUSE **</h2>
-            <p class="pause-info">PRESS [P] TO CONTINUE</p>
-            <button id="btn-resume" class="btn-primary">▶ CONTINUE</button>
-          </div>
+  <!-- ===== PAUSE SCREEN ===== -->
+  <div id="screen-pause" class="overlay">
+    <div class="menu-panel compact">
+      <div class="retro-border">
+        <h2 class="pause-title">** PAUSE **</h2>
+        <p class="pause-info">PRESSIONE [P] PARA CONTINUAR</p>
+        <button id="btn-resume" class="btn-primary">▶ CONTINUE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GAME OVER SCREEN ===== -->
+  <div id="screen-gameover" class="overlay">
+    <div class="menu-panel">
+      <div class="retro-border">
+        <h2 class="gameover-title">GAME OVER</h2>
+        <div class="final-score">
+          <span class="label">YOUR SCORE</span>
+          <strong id="final-score-value">0</strong>
         </div>
+        <div id="new-record" class="new-record hidden">★★ NEW RECORD! ★★</div>
+        <div class="high-score-display">HI-SCORE &nbsp;<strong id="gameover-highscore">0</strong></div>
+        <button id="btn-restart" class="btn-primary">▶ PLAY AGAIN</button>
+        <span class="hint-text">- PRESS ENTER -</span>
       </div>
+    </div>
+  </div>
 
-      <!-- ===== GAME OVER SCREEN ===== -->
-      <div id="screen-gameover" class="overlay" role="dialog" aria-label="Fim de jogo">
-        <div class="menu-panel">
-          <div class="retro-border">
-            <h2 class="gameover-title">GAME OVER</h2>
-            <div class="final-score">
-              <span class="label">YOUR SCORE</span>
-              <strong id="final-score-value">000000</strong>
-            </div>
-            <div id="new-record" class="new-record hidden">★★ NEW RECORD! ★★</div>
-            <div class="high-score-display">
-              HI-SCORE &nbsp;<strong id="gameover-highscore">000000</strong>
-            </div>
-            <button id="btn-restart" class="btn-primary">▶ PLAY AGAIN</button>
-            <span class="hint-text">- PRESS ENTER -</span>
-          </div>
-        </div>
-      </div>
+  <!-- ===== HUD ===== -->
+  <div id="hud" class="hidden">
+    <div id="hud-left">
+      <span class="hud-label">SCORE</span>
+      <span id="hud-score" class="hud-value">0</span>
+    </div>
+    <div id="hud-center">
+      <span class="hud-label">WAVE</span>
+      <span id="hud-level" class="hud-value">01</span>
+    </div>
+    <div id="hud-right">
+      <button id="btn-pause-hud" class="btn-pause-hud" aria-label="Pausar">⏸</button>
+      <span class="hud-label">LIVES</span>
+      <span id="hud-lives" class="hud-value">♥♥♥</span>
+    </div>
+  </div>
 
-      <!-- ===== HUD ===== -->
-      <div id="hud" class="hidden" role="status" aria-live="polite">
-        <div id="hud-left">
-          <span class="hud-label">SCORE</span>
-          <span id="hud-score" class="hud-value">0</span>
-        </div>
-        <div id="hud-center">
-          <span class="hud-label">WAVE</span>
-          <span id="hud-level" class="hud-value">01</span>
-        </div>
-        <div id="hud-right">
-          <span class="hud-label">LIVES</span>
-          <span id="hud-lives" class="hud-value">♥♥♥</span>
-        </div>
-      </div>
+  <!-- ===== FUEL BAR ===== -->
+  <div id="fuel-bar-container" class="hidden">
+    <span class="fuel-label">FUEL</span>
+    <div id="fuel-bar-track"><div id="fuel-bar-fill"></div></div>
+    <span id="fuel-pct" class="fuel-label">100%</span>
+  </div>
 
-      <!-- ===== FUEL BAR ===== -->
-      <div id="fuel-bar-container" class="hidden" role="meter" aria-label="Combustível">
-        <span class="fuel-label">FUEL</span>
-        <div id="fuel-bar-track">
-          <div id="fuel-bar-fill"></div>
-        </div>
-        <span id="fuel-pct" class="fuel-label">100%</span>
-      </div>
+  <!-- ===== BOSS HP ===== -->
+  <div id="boss-hp-container" class="hidden">
+    <span class="boss-hp-label">!! BOSS !!</span>
+    <div id="boss-hp-track"><div id="boss-hp-fill"></div></div>
+  </div>
 
-      <!-- ===== BOSS HP BAR ===== -->
-      <div id="boss-hp-container" class="hidden" role="meter" aria-label="Vida do Boss">
-        <span class="boss-hp-label">!! BOSS !!</span>
-        <div id="boss-hp-track">
-          <div id="boss-hp-fill"></div>
-        </div>
-      </div>
+  <!-- ===== WAVE ANNOUNCE ===== -->
+  <div id="wave-announce" class="hidden">
+    <div class="wave-text" id="wave-text">WAVE 1</div>
+    <div class="wave-sub"  id="wave-sub">🍔 ×24</div>
+  </div>
 
-      <!-- ===== WAVE ANNOUNCE ===== -->
-      <div id="wave-announce" class="hidden" role="alert">
-        <div class="wave-text" id="wave-text">WAVE 1</div>
-        <div class="wave-sub" id="wave-sub">🍔 ×24</div>
-      </div>
+  <!-- ===== POWERUP INDICATOR ===== -->
+  <div id="powerup-indicator" class="hidden">
+    <span id="powerup-icon">🛡️</span>
+    <div id="powerup-timer-track"><div id="powerup-timer-fill"></div></div>
+  </div>
 
-      <!-- ===== POWERUP INDICATOR ===== -->
-      <div id="powerup-indicator" class="hidden">
-        <span id="powerup-icon">🛡️</span>
-        <div id="powerup-timer-track"><div id="powerup-timer-fill"></div></div>
-      </div>
+  <!-- ===== TOUCH ZONE HINT (shown briefly on first play) ===== -->
+  <div id="touch-hint-overlay" class="hidden">
+    <div class="touch-zone-label">ARRASTE AQUI<br>PARA MOVER</div>
+  </div>
 
-      <!-- ===== TOUCH CONTROLS ===== -->
-      <div id="touch-controls" aria-hidden="true">
-        <div id="touch-move">
-          <button id="touch-left"  class="touch-btn" aria-label="Mover Esquerda">&#9664;</button>
-          <button id="touch-right" class="touch-btn" aria-label="Mover Direita">&#9654;</button>
-        </div>
-        <button id="touch-fire" class="touch-btn touch-fire-btn" aria-label="Atirar">&#128293;</button>
-      </div>
-
-      <!-- ===== ORIENTATION PROMPT (portrait mobile) ===== -->
-      <div id="orientation-prompt" aria-live="polite">
-        <div class="orientation-icon">&#8635;</div>
-        <p>GIRE A TELA</p>
-        <p class="orientation-sub">Para melhor experiência, jogue no modo paisagem</p>
-      </div>
-
-    </div><!-- /#crt-frame -->
-  </div><!-- /#app-root -->
+  <!-- ===== OLD TOUCH BUTTONS (keyboard fallback for devices that need them) ===== -->
+  <div id="touch-controls">
+    <div id="touch-move">
+      <button id="touch-left"  class="touch-btn" aria-label="Esquerda">&#9664;</button>
+      <button id="touch-right" class="touch-btn" aria-label="Direita">&#9654;</button>
+    </div>
+    <div class="touch-info-label">AUTO-FIRE ON</div>
+  </div>
 
   <script src="audio.js"></script>
   <script src="entities.js"></script>
   <script src="game.js"></script>
   <script>
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
+    if ('serviceWorker' in navigator)
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
   </script>
 </body>
 </html>
