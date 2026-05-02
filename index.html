@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="Megamania 2.0 - Space Shooter arcade inspirado no clássico do Atari com boss battles e power-ups">
   <title>MEGAMANIA 2.0 — Space Shooter</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -115,6 +115,14 @@
       <div id="powerup-indicator" class="hidden">
         <span id="powerup-icon">🛡️</span>
         <div id="powerup-timer-track"><div id="powerup-timer-fill"></div></div>
+      </div>
+      <!-- ===== TOUCH CONTROLS ===== -->
+      <div id="touch-controls">
+        <div id="touch-move">
+          <button id="touch-left"  class="touch-btn" aria-label="Mover Esquerda">&#9664;</button>
+          <button id="touch-right" class="touch-btn" aria-label="Mover Direita">&#9654;</button>
+        </div>
+        <button id="touch-fire" class="touch-btn touch-fire-btn" aria-label="Atirar">&#128293;</button>
       </div>
     </div>
   </div>

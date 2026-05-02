@@ -12,7 +12,41 @@ class InputHandler {
       if ([' ','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) e.preventDefault();
     });
     document.addEventListener('keyup', e => { this.keys[e.key] = false; });
+    this._initTouch();
   }
+
+  _initTouch() {
+    // Map touch button IDs to the keyboard key they simulate
+    const bindings = [
+      ['touch-left',  'ArrowLeft'],
+      ['touch-right', 'ArrowRight'],
+      ['touch-fire',  ' '],
+    ];
+    for (const [id, key] of bindings) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      const press = e => {
+        e.preventDefault();
+        this.keys[key] = true;
+        el.classList.add('pressed');
+      };
+      const release = e => {
+        e.preventDefault();
+        this.keys[key] = false;
+        el.classList.remove('pressed');
+      };
+      el.addEventListener('touchstart',  press,   { passive: false });
+      el.addEventListener('touchend',    release, { passive: false });
+      el.addEventListener('touchcancel', release, { passive: false });
+      // Also support mouse (for desktop testing of touch UI)
+      el.addEventListener('mousedown',  press);
+      el.addEventListener('mouseup',    release);
+      el.addEventListener('mouseleave', release);
+    }
+    // Prevent context menu on long-press
+    document.getElementById('touch-controls')?.addEventListener('contextmenu', e => e.preventDefault());
+  }
+
   down(k) { return !!this.keys[k]; }
   left()  { return this.down('ArrowLeft') || this.down('a') || this.down('A'); }
   right() { return this.down('ArrowRight') || this.down('d') || this.down('D'); }
@@ -109,7 +143,26 @@ class GameEngine {
 
     this._bindEvents();
     this._resetGame();
+    this._applyScale();
+    window.addEventListener('resize', () => this._applyScale());
     requestAnimationFrame(t => this._loop(t));
+  }
+
+  _applyScale() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const scaleX = vw / GAME_W;
+    const scaleY = vh / GAME_H;
+    const scale  = Math.min(scaleX, scaleY, 1); // never upscale beyond 1 on desktop
+    document.getElementById('game-wrapper').style.setProperty('--game-scale', scale);
+    // Also shift wrapper height to compensate for scale transform
+    if (scale < 1) {
+      const scaledH = GAME_H * scale;
+      document.getElementById('game-wrapper').style.marginBottom =
+        `-${(GAME_H - scaledH) / 2}px`;
+    } else {
+      document.getElementById('game-wrapper').style.marginBottom = '';
+    }
   }
 
   _bindEvents() {

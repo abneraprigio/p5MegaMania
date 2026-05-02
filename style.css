@@ -505,3 +505,125 @@ kbd {
 
 /* ---------- Utility ---------- */
 .hidden { display: none !important; }
+
+/* ============================================================
+   TOUCH CONTROLS & RESPONSIVE SCALING
+   ============================================================ */
+
+/* ---------- Responsive Scaling ---------- */
+/* Scale the entire game wrapper to fit any screen size */
+#crt-wrapper {
+  transform-origin: center center;
+}
+
+/* ---------- Touch Controls Container ---------- */
+#touch-controls {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 110px;
+  display: none;          /* hidden by default on desktop */
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px 16px;
+  z-index: 15;
+  pointer-events: none;   /* let children capture events */
+  background: linear-gradient(0deg, rgba(0,8,0,0.5) 0%, transparent 100%);
+}
+
+/* Show touch controls on touch-primary devices */
+@media (pointer: coarse) {
+  #touch-controls { display: flex; }
+
+  /* Shrink fuel bar to avoid overlap with controls */
+  #fuel-bar-container { bottom: 110px; }
+  #powerup-indicator  { bottom: 140px; }
+}
+
+/* ---------- Move Buttons (left side) ---------- */
+#touch-move {
+  display: flex;
+  gap: 10px;
+  pointer-events: all;
+}
+
+/* ---------- Base Touch Button ---------- */
+.touch-btn {
+  pointer-events: all;
+  width: 72px;
+  height: 72px;
+  border: 2px solid var(--crt-green);
+  border-radius: 8px;
+  background: rgba(0, 255, 65, 0.07);
+  color: var(--crt-green);
+  font-size: 26px;
+  font-family: var(--pixel-font);
+  text-shadow: var(--glow-green);
+  box-shadow: var(--glow-green);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;  /* prevent scroll interference */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Active visual feedback */
+  transition: background 0.05s, box-shadow 0.05s;
+}
+
+.touch-btn:active,
+.touch-btn.pressed {
+  background: rgba(0, 255, 65, 0.22);
+  box-shadow: 0 0 10px #00ff41, 0 0 24px #00ff41;
+}
+
+/* ---------- Fire Button (right side) ---------- */
+.touch-fire-btn {
+  width: 80px;
+  height: 80px;
+  border-color: var(--crt-amber);
+  color: var(--crt-amber);
+  font-size: 30px;
+  text-shadow: var(--glow-amber);
+  box-shadow: var(--glow-amber);
+  background: rgba(255, 176, 0, 0.07);
+  border-radius: 50%;    /* round fire button */
+  animation: firePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes firePulse {
+  0%, 100% { box-shadow: var(--glow-amber); }
+  50%      { box-shadow: 0 0 10px #ffb000, 0 0 24px #ffb000, 0 0 40px rgba(255,176,0,0.5); }
+}
+
+.touch-fire-btn:active,
+.touch-fire-btn.pressed {
+  background: rgba(255, 176, 0, 0.25);
+  box-shadow: 0 0 12px #ffb000, 0 0 30px #ffb000;
+  transform: scale(0.95);
+}
+
+/* ---------- Scale game to viewport on small screens ---------- */
+@media (max-width: 820px) {
+  html, body {
+    align-items: flex-start;
+    padding-top: 0;
+  }
+  #crt-wrapper {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  #game-wrapper {
+    border-radius: 0;
+    /* Let JS set the CSS variable --scale for precise fit */
+    transform: scale(var(--game-scale, 1));
+    transform-origin: top center;
+  }
+}
+
+/* Landscape mobile: keep controls visible */
+@media (max-height: 500px) and (pointer: coarse) {
+  #touch-controls { height: 80px; }
+  .touch-btn       { width: 58px; height: 58px; font-size: 20px; }
+  .touch-fire-btn  { width: 64px; height: 64px; }
+  #fuel-bar-container { bottom: 80px; }
+}
